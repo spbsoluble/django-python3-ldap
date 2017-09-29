@@ -145,12 +145,25 @@ def connection(**kwargs):
         auto_bind = ldap3.AUTO_BIND_NO_TLS
     # Connect.
     try:
-        c = ldap3.Connection(
-            ldap3.Server(
+        if isinstance(settings.LDAP_AUTH_URL, list):
+            server_pool = ldap3.ServerPool()
+            for server in settings.LDAP_AUTH_URL:
+                 server_pool.add(
+                     ldap3.Server(
+                         server,
+                         allowed_referral_hosts=[("*", True)],
+                         get_info=ldap3.NONE,
+                    )
+                 )
+        else:
+            server_pool = ldap3.Server(
                 settings.LDAP_AUTH_URL,
                 allowed_referral_hosts=[("*", True)],
                 get_info=ldap3.NONE,
-            ),
+            )
+
+        c = ldap3.Connection(
+            server_pool,
             user=username,
             password=password,
             auto_bind=auto_bind,
